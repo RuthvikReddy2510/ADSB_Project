@@ -9,7 +9,7 @@ Requirements:
 - Python 3.9 or higher
 
 Install the required libraries:
-pip install requests plotly pandas
+pip install requests plotly pandas flask
 
 How to run:
 python adsb_seatac_addon.py
