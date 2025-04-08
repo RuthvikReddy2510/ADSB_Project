@@ -99,8 +99,8 @@ def check_proximity_alerts(planes):
 
             if level != 'NONE':
                 print(f"""{level}: Aircraft proximity within {int(distance)} meters
-  {p1['Callsign']} ({'On Ground' if p1['On Ground'] else 'In Air'}) | Altitude: {p1['Altitude']} m | Velocity: {p1['Velocity']} m/s | Heading Angle: {p1['Heading']}° | Last Contact: {p1['Last Contact']}
-  {p2['Callsign']} ({'On Ground' if p2['On Ground'] else 'In Air'}) | Altitude: {p2['Altitude']} m | Velocity: {p2['Velocity']} m/s | Heading Angle: {p2['Heading']}° | Last Contact: {p2['Last Contact']}\n""")
+  {p1['Callsign']} ({'On Ground' if p1['On Ground'] else 'In Air'}) | Altitude: {p1['Altitude']} m | Velocity: {p1['Velocity']} m/s | Heading Angle: {p1['Heading']}° | Vertical Rate: {p1['Vertical Rate']} m/s | Last Contact: {p1['Last Contact']}
+  {p2['Callsign']} ({'On Ground' if p2['On Ground'] else 'In Air'}) | Altitude: {p2['Altitude']} m | Velocity: {p2['Velocity']} m/s | Heading Angle: {p2['Heading']}° | Vertical Rate: {p1['Vertical Rate']} m/s | Last Contact: {p2['Last Contact']}\n""")
 
                 # Upgrade both aircraft with most severe level seen
                 for p in (p1, p2):
@@ -122,7 +122,8 @@ if __name__ == "__main__":
    Position: ({plane['Latitude']:.4f}, {plane['Longitude']:.4f})
    Distance: {plane['Distance from SeaTac (m)']} m
    Altitude: {plane['Altitude']} m | Velocity: {plane['Velocity']} m/s
-   Heading: {plane['Heading']}° | On Ground: {'Yes' if plane['On Ground'] else 'No'}
+   Heading: {plane['Heading']}° |  Vertical Rate: {plane['Vertical Rate']} m/s
+   On Ground: {'Yes' if plane['On Ground'] else 'No'}
 """)
             print("\n" + "+" * 120 + "\n")
             check_proximity_alerts(planes)

@@ -8,6 +8,7 @@ def format_hover(p):
         f"Altitude: {p['Altitude']} m | "
         f"Velocity: {p['Velocity']} m/s | "
         f"Heading: {p['Heading']}° | "
+        f"Vertical Rate: {p['Vertical Rate']} m/s |"
         f"Alert Level: {p['AlertLevel']}"
     )
 
@@ -51,16 +52,18 @@ def plot_aircraft_3d(planes):
 
     # Final layout and camera settings
     fig.update_layout(
-        title="3D Aircraft Proximity Visualization near Sea-Tac",
-        scene=dict(
-            xaxis_title='Latitude',
-            yaxis_title='Longitude',
-            zaxis_title='Altitude (m)',
-            camera=dict(eye=dict(x=0, y=0, z=2.5))
+        scene_camera=dict(
+            eye=dict(x=1.5, y=1.5, z=0.5),  # Simulates a low-altitude view from SeaTac outward
+            center=dict(x=0, y=0, z=0)
         ),
-        margin=dict(l=0, r=0, b=0, t=40),
-        height=750,
-        showlegend=True
+        scene=dict(
+            xaxis_title="Longitude",
+            yaxis_title="Latitude",
+            zaxis_title="Altitude (m)"
+        ),
+    title="3D Aircraft View - From SeaTac",
+    margin=dict(r=0, l=0, b=0, t=40)
     )
+
 
     fig.show()

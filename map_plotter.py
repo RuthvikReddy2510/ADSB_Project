@@ -17,6 +17,7 @@ def plot_aircraft_map(planes):
         'Status': 'On Ground' if p['On Ground'] else 'In Air',
         'Velocity': p['Velocity'],
         'Heading': p['Heading'],
+        'Vertical Rate': p['Vertical Rate'],
         'AlertLevel': p.get('AlertLevel', 'NONE'),
     } for p in planes]
 
@@ -32,6 +33,7 @@ def plot_aircraft_map(planes):
             'Altitude': True,
             'Velocity': True,
             'Heading': True,
+            'Vertical Rate': True,
             'Status': True,
             'AlertLevel': False,
             'Latitude': False,
@@ -41,8 +43,19 @@ def plot_aircraft_map(planes):
         height=700
     )
 
+    # Add SeaTac marker manually
+    fig.add_scattermapbox(
+        lat=[47.4502],
+        lon=[-122.3088],
+        mode='markers+text',
+        marker=dict(size=14, color='green'),
+        text=["SeaTac"],
+        textposition="top right",
+        name="SeaTac"
+    )
+
     fig.update_layout(
-        mapbox_style="carto-positron",  # Clean light style; alternatives: "open-street-map", "carto-darkmatter"
+        mapbox_style="carto-positron",
         mapbox_center={"lat": 47.4502, "lon": -122.3088},
         title="Live Aircraft Map View - SeaTac Region",
         margin={"r": 0, "t": 40, "l": 0, "b": 0},
@@ -50,4 +63,3 @@ def plot_aircraft_map(planes):
     )
 
     fig.show(config={"scrollZoom": True})
-
