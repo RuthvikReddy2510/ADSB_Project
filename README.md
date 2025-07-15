@@ -1,20 +1,47 @@
-SeaTac Aircraft Tracker
+# Aircraft Proximity Tracker
 
-This is a simple real-time aircraft tracking tool that:
-- Fetches aircraft data near SeaTac airport using the OpenSky API
-- Detects aircraft proximity alerts (ALARM / ALERT / WARNING)
-- Shows aircraft in a 3D view and a live map view
+A real-time dashboard to:
 
-Requirements:
+- Track aircraft near selected airports using the OpenSky API
+- Detect proximity conflicts with ALARM, ALERT, or WARNING levels
+- Visualize aircraft on a live map
+- Display conflicting flight pairs in a dynamic table
+
+---
+
+## Requirements
+
 - Python 3.9 or higher
 
-Install the required libraries:
-pip install requests plotly pandas flask
+---
 
-How to run:
-python adsb_seatac_addon.py
+## Setup
 
-Files:
-- adsb_seatac_addon.py : Main logic (fetching, alerts, visualization)
-- plotter.py            : 3D aircraft plotting
-- map_plotter.py        : Map-based aircraft plotting
+Install the required Python libraries:
+
+pip install flask requests
+
+---
+
+## How to Run
+
+Run the Flask server:
+
+python server.py
+
+Open your browser and go to:
+
+http://127.0.0.1:5000
+
+---
+
+## Project Structure
+
+- server.py – Flask application entry point
+- adsb_analysis.py – Aircraft data fetch + alert detection
+- airport_config.py – Airport coordinates
+- threshold_config.py – Thresholds for proximity alerts
+- templates/ – HTML templates (map, layout, table)
+- static/ – Icons and logo assets
+
+---

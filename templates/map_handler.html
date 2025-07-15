@@ -1,0 +1,66 @@
+<div id="map" style="height: 600px; border-radius: 10px; overflow: hidden;"></div>
+
+<script>
+  const airportCoords = {{ airport_coords | tojson }};
+  const map = L.map('map').setView([47.4502, -122.3088], 10);  // Default to SEA
+
+  // Use clean English-only map tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18
+  }).addTo(map);
+
+  // Remove the Leaflet attribution label
+  const styleTag = document.createElement("style");
+  styleTag.textContent = ".leaflet-control-attribution { display: none !important; }";
+  document.head.appendChild(styleTag);
+
+  const airplaneIcons = {
+    "ALARM": L.icon({ iconUrl: "/static/Alarm_Aeroplane.png", iconSize: [32, 32] }),
+    "ALERT": L.icon({ iconUrl: "/static/Alert_Aeroplane.png", iconSize: [32, 32] }),
+    "WARNING": L.icon({ iconUrl: "/static/Warning_Aeroplane.png", iconSize: [32, 32] }),
+    "NONE": L.icon({ iconUrl: "/static/None_Aeroplane.png", iconSize: [32, 32] })
+  };
+
+  let markers = [];
+
+  function updateMap(airportCode) {
+    const coords = airportCoords[airportCode];
+    if (coords) {
+      map.setView([coords.lat, coords.lon], 10);
+    }
+
+    fetch(`/api/planes?airport=${airportCode}`)
+      .then(res => res.json())
+      .then(planes => {
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        planes.forEach(plane => {
+          const icon = airplaneIcons[plane.AlertLevel?.toUpperCase() || "NONE"];
+          const marker = L.marker([plane.Latitude, plane.Longitude], { icon }).addTo(map);
+
+          const popup = `
+            <strong>${plane.Callsign || 'Unknown'}</strong><br>
+            Altitude: ${plane.Altitude} m<br>
+            Velocity: ${plane.Velocity} m/s<br>
+            Heading: ${plane.Heading}&deg;<br>
+            Status: ${plane.OnGround === true || plane.OnGround === "true" || plane.OnGround === 1 ? "On Ground" : "In Air"}<br>
+            <b>Alert Level:</b> ${plane.AlertLevel || 'NONE'}
+          `;
+          marker.bindPopup(popup);
+          markers.push(marker);
+        });
+        renderConflictTable(planes);
+      });
+  }
+
+  const airportDropdown = document.getElementById("airport");
+  airportDropdown.addEventListener("change", () => {
+    const airportCode = airportDropdown.value.split(" - ")[0];
+    updateMap(airportCode);
+  });
+
+  // Initial map load
+  const defaultCode = airportDropdown.value.split(" - ")[0];
+  updateMap(defaultCode);
+</script>

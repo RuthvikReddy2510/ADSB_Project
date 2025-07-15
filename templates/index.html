@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Aircraft Proximity Tracker</title>
+
+  <!-- Favicon for browser tab -->
+  <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/png" />
+
+  <!-- Leaflet styles -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f0eb;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 10px 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      height: 60px;
+    }
+
+    .navbar .logo {
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    .navbar img {
+      height: 45px;
+      margin-right: 10px;
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 80px); /* reduced slightly for bottom space */
+      padding: 20px 20px 40px 20px; /* bottom padding */
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .left-panel {
+      width: 60%;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      margin-right: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .right-panel {
+      width: 40%;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      overflow-y: auto;
+      max-height: 100%;
+    }
+
+    .right-panel table {
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 14px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .right-panel th {
+      background-color: #f8d7da;
+      padding: 8px;
+      text-align: left;
+      font-weight: bold;  
+    }
+
+    .right-panel td {
+      padding: 8px;
+      border-top: 1px solid #ddd;
+    }
+
+    .filter-bar {
+      margin-bottom: 15px;
+    }
+
+    .filter-bar label {
+      font-weight: 600;
+      margin-right: 10px;
+    }
+
+    .filter-bar select {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      min-width: 200px;
+    }
+
+    #map {
+      height: 430px; /* slightly reduced from 460 */
+      border-radius: 8px;
+      flex-grow: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="navbar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='Anicca_Logo.png') }}" alt="Logo" />
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="left-panel">
+      <div class="filter-bar">
+        <label for="airport">Airport:</label>
+        <select id="airport">
+          {% for code, details in airports.items() %}
+            <option value="{{ code }}">{{ code }} - {{ details.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <div class="right-panel" id="conflict-table">
+      {% include 'table_handler.html' %}
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Map logic -->
+  {% include 'map_handler.html' %}
+</body>
+</html>
