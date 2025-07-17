@@ -6,8 +6,6 @@
 
   <!-- Favicon for browser tab -->
   <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/png" />
-
-  <!-- Leaflet styles -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
   <style>
@@ -30,22 +28,87 @@
       height: 60px;
     }
 
-    .navbar .logo {
+    .logo {
       display: flex;
       align-items: center;
-      font-weight: bold;
-      font-size: 20px;
     }
 
-    .navbar img {
+    .logo img {
       height: 45px;
       margin-right: 10px;
     }
 
+    .user-profile {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .profile-box {
+      display: flex;
+      align-items: center;
+      background-color: #f4f4f4;
+      border-radius: 30px;
+      padding: 6px 12px;
+      font-size: 14px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+    }
+
+    .avatar {
+      background-color: #b9402b;
+      color: white;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .username {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .menu-dots {
+      margin-left: 8px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      display: none;
+    }
+
+    .dropdown a {
+      display: block;
+      padding: 10px 15px;
+      color: #dc3545;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .dropdown a:hover {
+      background-color: #f8d7da;
+    }
+
     .container {
       display: flex;
-      height: calc(100vh - 80px); /* reduced slightly for bottom space */
-      padding: 20px 20px 40px 20px; /* bottom padding */
+      height: calc(100vh - 80px);
+      padding: 20px 20px 40px 20px;
       box-sizing: border-box;
       overflow: hidden;
     }
@@ -58,7 +121,6 @@
       margin-right: 20px;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
     }
 
     .right-panel {
@@ -106,7 +168,7 @@
     }
 
     #map {
-      height: 430px; /* slightly reduced from 460 */
+      height: 430px;
       border-radius: 8px;
       flex-grow: 1;
     }
@@ -117,6 +179,16 @@
   <div class="navbar">
     <div class="logo">
       <img src="{{ url_for('static', filename='Anicca_Logo.png') }}" alt="Logo" />
+    </div>
+    <div class="user-profile">
+      <div class="profile-box" onclick="toggleDropdown()">
+        <div class="avatar">a</div>
+        <span class="username">admin</span>
+        <div class="menu-dots">⋮</div>
+      </div>
+      <div class="dropdown" id="dropdownMenu">
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </div>
     </div>
   </div>
 
@@ -140,8 +212,22 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
   <!-- Map logic -->
   {% include 'map_handler.html' %}
+
+  <script>
+    function toggleDropdown() {
+      const menu = document.getElementById('dropdownMenu');
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+
+    // Optional: Close dropdown if clicked outside
+    window.addEventListener('click', function(event) {
+      const menu = document.getElementById('dropdownMenu');
+      if (!event.target.closest('.profile-box')) {
+        menu.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>
