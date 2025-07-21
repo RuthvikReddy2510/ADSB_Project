@@ -18,6 +18,13 @@ def haversine(lat1, lon1, alt1, lat2, lon2, alt2):
     vertical_distance = abs((alt1 or 0) - (alt2 or 0))
     return sqrt(horizontal_distance**2 + vertical_distance**2)
 
+def is_airborne(plane):
+    """Improved classification of airborne state."""
+    alt = plane["Altitude"] or 0
+    vel = plane["Velocity"] or 0
+    vrate = plane["VerticalRate"] or 0
+    return (alt > 150 or vrate > 1 or vel > 30)
+
 def fetch_planes_near_airport(airport_code):
     airport = AIRPORTS[airport_code]
     lat, lon = airport["lat"], airport["lon"]
@@ -78,9 +85,13 @@ def check_proximity_alerts(planes, level="medium"):
             distance = haversine(p1["Latitude"], p1["Longitude"], p1["Altitude"],
                                  p2["Latitude"], p2["Longitude"], p2["Altitude"])
 
-            if not p1["OnGround"] and not p2["OnGround"]:
+            # Use smarter airborne classification
+            p1_air = is_airborne(p1)
+            p2_air = is_airborne(p2)
+
+            if p1_air and p2_air:
                 category = "air_air"
-            elif p1["OnGround"] and p2["OnGround"]:
+            elif not p1_air and not p2_air:
                 category = "ground_ground"
             else:
                 category = "air_ground"
@@ -94,6 +105,7 @@ def check_proximity_alerts(planes, level="medium"):
                 alert = "WARNING"
             else:
                 continue
+
             for p in (p1, p2):
                 if severity(alert) > severity(p["AlertLevel"]):
                     p["AlertLevel"] = alert
