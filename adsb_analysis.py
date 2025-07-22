@@ -74,7 +74,7 @@ def fetch_planes_near_airport(airport_code):
         print(f"[ERROR] Fetch failed: {e}")
         return []
 
-def check_proximity_alerts(planes, level="medium"):
+def check_proximity_alerts(planes):
     def severity(lvl): return {"NONE": 0, "WARNING": 1, "ALERT": 2, "ALARM": 3}[lvl]
 
     for i in range(len(planes)):
@@ -85,23 +85,22 @@ def check_proximity_alerts(planes, level="medium"):
             distance = haversine(p1["Latitude"], p1["Longitude"], p1["Altitude"],
                                  p2["Latitude"], p2["Longitude"], p2["Altitude"])
 
-            # Use smarter airborne classification
             p1_air = is_airborne(p1)
             p2_air = is_airborne(p2)
 
             if p1_air and p2_air:
-                category = "air_air"
+                category = "Air-Air"
             elif not p1_air and not p2_air:
-                category = "ground_ground"
+                category = "Ground-Ground"
             else:
-                category = "air_ground"
+                category = "Air-Ground"
 
-            critical = THRESHOLDS[category][level]
-            if distance <= critical:
+            thresholds = THRESHOLDS[category]
+            if distance <= thresholds["high"]:
                 alert = "ALARM"
-            elif distance <= critical + 50:
+            elif distance <= thresholds["medium"]:
                 alert = "ALERT"
-            elif distance <= critical + 100:
+            elif distance <= thresholds["low"]:
                 alert = "WARNING"
             else:
                 continue
