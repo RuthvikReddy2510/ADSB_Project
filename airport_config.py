@@ -3,7 +3,6 @@
 AIRPORTS = {
     "SEA": {"name": "Seattle-Tacoma", "lat": 47.450237, "lon": -122.3088},
     "LHR": {"name": "London Heathrow", "lat": 51.4700, "lon": -0.4543},
-    "SYD": {"name": "Sydney", "lat": -33.9399, "lon": 151.1753},
     "SIN": {"name": "Singapore Changi", "lat": 1.3644, "lon": 103.9915},
     "DEL": {"name": "Delhi IGI", "lat": 28.5562, "lon": 77.1000},
     "BLR": {"name": "Bengaluru KIA", "lat": 13.1982, "lon": 77.7065},
