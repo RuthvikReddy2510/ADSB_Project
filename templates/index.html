@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Aircraft Proximity Tracker</title>
+  <title>AURA</title>
 
-  <link rel="icon" href="{{ url_for('static', filename='logo.png') }}" type="image/png" />
+  <link rel="icon" href="{{ url_for('static', filename='AURA.png') }}" type="image/png" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
   <style>
@@ -29,7 +29,7 @@
     }
 
     .logo { display: flex; align-items: center; }
-    .logo img { height: 45px; margin-right: 10px; }
+    .logo img { height: 150px; margin-right: 10px; }
 
     .user-profile { position: relative; display: flex; align-items: center; gap: 15px; }
     .profile-box {
@@ -142,7 +142,7 @@
 <body>
   <div class="navbar">
     <div class="logo">
-      <img src="{{ url_for('static', filename='Anicca_Logo.png') }}" alt="Logo" />
+      <img src="{{ url_for('static', filename='AURA_Logo.png') }}" alt="Logo" />
     </div>
     <div class="user-profile">
       <div class="profile-box" onclick="toggleDropdown()">
