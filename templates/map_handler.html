@@ -45,7 +45,7 @@
             Velocity: ${plane.Velocity} m/s<br>
             Heading: ${plane.Heading}&deg;<br>
             Status: ${plane.OnGround === true || plane.OnGround === "true" || plane.OnGround === 1 ? "On Ground" : "In Air"}<br>
-            <b>Alert Level:</b> ${plane.AlertLevel || 'NONE'}
+            <b>Caution Level:</b> ${plane.AlertLevel || 'NONE'}
           `;
           marker.bindPopup(popup);
           markers.push(marker);

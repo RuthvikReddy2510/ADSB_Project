@@ -5,7 +5,7 @@
       <th style="padding:8px; text-align:center;">Flight A</th>
       <th style="padding:8px; text-align:center;">Flight B</th>
       <th style="padding:8px; text-align:center;">Category</th>
-      <th style="padding:8px; text-align:center;">Priority</th>
+      <th style="padding:8px; text-align:center;">Caution Level</th>
       <th style="padding:8px; text-align:center;">Distance (in mts)</th>
     </tr>
   </thead>
@@ -71,11 +71,11 @@ function renderConflictTable(planes) {
 
     row.setAttribute("style", bgColor);
     row.innerHTML = `
-      <td style="padding:8px;">${conflict.flightA}</td>
-      <td style="padding:8px;">${conflict.flightB}</td>
-      <td style="padding:8px;">${conflict.category}</td>
-      <td style="padding:8px;">${conflict.alert}</td>
-      <td style="padding:8px;">${conflict.distance}</td>
+      <td style="padding:8px; text-align:center;">${conflict.flightA}</td>
+      <td style="padding:8px; text-align:center;">${conflict.flightB}</td>
+      <td style="padding:8px; text-align:center;">${conflict.category}</td>
+      <td style="padding:8px; text-align:center;">${conflict.alert}</td>
+      <td style="padding:8px; text-align:center;">${conflict.distance}</td>
     `;
 
     tableBody.appendChild(row);
