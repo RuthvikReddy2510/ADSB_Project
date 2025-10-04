@@ -4,10 +4,10 @@ from datetime import datetime
 from airport_config import AIRPORTS
 from threshold_config import THRESHOLDS
 
-# constants
+
 MAX_RADIUS_METERS = 48280  # ~30 mi
 
-# geometry
+
 def haversine(lat1, lon1, alt1, lat2, lon2, alt2):
     # 3D ECEF (WGS-84)
     A = 6378137.0
@@ -15,7 +15,7 @@ def haversine(lat1, lon1, alt1, lat2, lon2, alt2):
     E2 = F * (2.0 - F)
 
     def to_ecef(lat, lon, alt):
-        alt = 0.0 if alt is None else alt
+        alt = 0.0 if alt is None else float(alt)
         phi, lam = radians(lat), radians(lon)
         sphi, cphi = sin(phi), cos(phi)
         slam, clam = sin(lam), cos(lam)
@@ -31,7 +31,6 @@ def haversine(lat1, lon1, alt1, lat2, lon2, alt2):
     return sqrt(dx*dx + dy*dy + dz*dz)
 
 def ground_distance(lat1, lon1, lat2, lon2):
-    # surface GC distance
     R = 6_371_000.0
     p1, p2 = radians(lat1), radians(lat2)
     dphi = p2 - p1
@@ -39,34 +38,25 @@ def ground_distance(lat1, lon1, lat2, lon2):
     a = sin(dphi/2)**2 + cos(p1)*cos(p2)*sin(dl/2)**2
     return 2 * R * atan2(sqrt(a), sqrt(1 - a))
 
-# airborne classifier (robust)
-def is_airborne(plane):
-    alt = plane.get("Altitude") or 0.0
-    vel = plane.get("Velocity") or 0.0
-    vr  = plane.get("VerticalRate") or 0.0
-    og  = plane.get("OnGround")
+def is_ground(plane):
+    alt = float(plane.get("Altitude") or 0.0)      # meters
+    vel = float(plane.get("Velocity") or 0.0)      # m/s
+    vr  = float(plane.get("VerticalRate") or 0.0)  # m/s
 
-    # clamp spikes when flagged ground
-    if og is True:
-        if vel > 120: vel = 0.0
-        if abs(vr) > 2.0: vr = 0.0
-        if alt < 5: alt = 0.0
+    MPS_TO_KT, MPS_TO_FPS = 1.9438444924, 3.28084
+    vel_kt, vr_fps = vel * MPS_TO_KT, vr * MPS_TO_FPS
 
-    # strong cues
-    if alt > 300 or vel > 80 or abs(vr) > 3.0:
+    if alt < 15.0:  # ~0–50 ft: definitely ground
         return True
-    if alt < 60 and vel < 10 and abs(vr) < 0.5:
-        return False
-
-    # hint from flag (tie-breaker only)
-    if og is True and vel < 30 and abs(vr) < 1.5 and alt < 200:
-        return False
-    if og is False and (alt > 150 or vel > 40 or abs(vr) > 1.0):
+    if alt < 60.0 and not (vel_kt >= 40.0 or abs(vr_fps) >= 2.0):
         return True
-
+    if alt < 120.0 and vel_kt < 25.0 and abs(vr_fps) < 1.5:
+        return True
     return False
 
-# data fetch
+def is_airborne(plane):
+    return not is_ground(plane)
+
 def fetch_planes_near_airport(airport_code):
     airport = AIRPORTS[airport_code]
     lat, lon = airport["lat"], airport["lon"]
@@ -79,15 +69,15 @@ def fetch_planes_near_airport(airport_code):
         data = resp.json()
         aircraft = []
 
-        for ac in data.get("states", []):
+        for ac in data.get("states", []) or []:
             ac_lat, ac_lon = ac[6], ac[5]
             if ac_lat is None or ac_lon is None:
                 continue
 
             # prefer baro (7), fallback geo (13)
-            alt = (ac[7] if len(ac) > 7 and ac[7] is not None else
-                   (ac[13] if len(ac) > 13 and ac[13] is not None else 0.0))
-            if not alt or alt < 0:
+            alt = (ac[7] if len(ac) > 7 and ac[7] is not None
+                   else (ac[13] if len(ac) > 13 and ac[13] is not None else 0.0))
+            if alt is None or alt< 0:
                 alt = 0.0
 
             # 30-mi horizontal filter
@@ -95,22 +85,25 @@ def fetch_planes_near_airport(airport_code):
             if dist_h > MAX_RADIUS_METERS:
                 continue
 
-            aircraft.append({
+            p = {
                 "ICAO24": ac[0],
                 "Callsign": ac[1].strip() if ac[1] else "N/A",
                 "Origin Country": ac[2],
                 "Last Contact": datetime.fromtimestamp(ac[4]).isoformat() if ac[4] else None,
                 "Longitude": ac_lon,
                 "Latitude": ac_lat,
-                "Altitude": round(alt),
+                "Altitude": round(float(alt)),
                 "DistanceFromAirport": round(dist_h),
-                "OnGround": ac[8],
-                "Velocity": ac[9] or 0.0,
+                #"OnGround": ac[8],                 # kept for debugging
+                "Velocity": float(ac[9] or 0.0),   # m/s
                 "Heading": ac[10],
-                "VerticalRate": ac[11] or 0.0,
+                "VerticalRate": float(ac[11] or 0.0),  # m/s
                 "AlertLevel": "NONE",
                 "Conflicts": []
-            })
+            }
+            
+            p["Status"] = "In Air" if is_airborne(p) else "On Ground"
+            aircraft.append(p)
 
         return aircraft
 
@@ -118,9 +111,12 @@ def fetch_planes_near_airport(airport_code):
         print(f"[ERROR] Fetch failed: {e}")
         return []
 
-# conflict detection
 def check_proximity_alerts(planes):
     def sev(lvl): return {"NONE": 0, "WARNING": 1, "ALERT": 2, "ALARM": 3}[lvl]
+
+    # ensure tooltips stay in sync
+    for p in planes:
+        p["Status"] = "In Air" if is_airborne(p) else "On Ground"
 
     for i in range(len(planes)):
         for j in range(i + 1, len(planes)):
@@ -130,21 +126,17 @@ def check_proximity_alerts(planes):
             if p1.get("ICAO24") == p2.get("ICAO24"):
                 continue
 
-            # 3D separation
             d = haversine(p1["Latitude"], p1["Longitude"], p1["Altitude"],
                           p2["Latitude"], p2["Longitude"], p2["Altitude"])
 
-            # category with ground-ground override
-            if p1.get("OnGround") is True and p2.get("OnGround") is True:
+            # category (altitude-only ground logic)
+            g1, g2 = is_ground(p1), is_ground(p2)
+            if g1 and g2:
                 cat = "Ground-Ground"
+            elif not g1 and not g2:
+                cat = "Air-Air"
             else:
-                a1, a2 = is_airborne(p1), is_airborne(p2)
-                if a1 and a2:
-                    cat = "Air-Air"
-                elif not a1 and not a2:
-                    cat = "Ground-Ground"
-                else:
-                    cat = "Air-Ground"
+                cat = "Air-Ground"
 
             thr = THRESHOLDS[cat]
             if d <= thr["high"]:
