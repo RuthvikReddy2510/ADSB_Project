@@ -1,7 +1,7 @@
 # threshold_config.py
 
 THRESHOLDS = {
-    "Air-Air": {"low": 300, "medium": 250, "high": 200},
-    "Air-Ground": {"low": 200, "medium": 150, "high": 100},
-    "Ground-Ground": {"low": 15, "medium": 8, "high": 5}
+    "Air-Air": {"low": 900, "medium": 750, "high": 600},
+    "Air-Ground": {"low": 600, "medium": 450, "high": 300},
+    "Ground-Ground": {"low": 45, "medium": 24, "high": 15}
 }
