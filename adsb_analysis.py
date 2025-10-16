@@ -1,13 +1,16 @@
+import os
 import requests
 from math import radians, sin, cos, sqrt, atan2
 from datetime import datetime
 from airport_config import AIRPORTS
 from threshold_config import THRESHOLDS
 
-
+# ===== Constants =====
 MAX_RADIUS_METERS = 48280  # ~30 mi
+AEROAPI_KEY = os.getenv("AEROAPI_KEY", "eGaJ8okficMsluf0vlW5d7t8u1XlpmFJ")
+AEROAPI_URL = "https://aeroapi.flightaware.com/aeroapi/flights/search"
 
-
+# ===== Distance / geometry =====
 def haversine(lat1, lon1, alt1, lat2, lon2, alt2):
     # 3D ECEF (WGS-84)
     A = 6378137.0
@@ -46,7 +49,7 @@ def is_ground(plane):
     MPS_TO_KT, MPS_TO_FPS = 1.9438444924, 3.28084
     vel_kt, vr_fps = vel * MPS_TO_KT, vr * MPS_TO_FPS
 
-    if alt < 15.0:  # ~0–50 ft: definitely ground
+    if alt < 15.0: 
         return True
     if alt < 60.0 and not (vel_kt >= 40.0 or abs(vr_fps) >= 2.0):
         return True
@@ -59,62 +62,78 @@ def is_airborne(plane):
 
 def fetch_planes_near_airport(airport_code):
     airport = AIRPORTS[airport_code]
-    lat, lon = airport["lat"], airport["lon"]
+    lat, lon = float(airport["lat"]), float(airport["lon"])
 
-    params = {"lamin": lat - 0.5, "lamax": lat + 0.5, "lomin": lon - 0.5, "lomax": lon + 0.5}
+    params_bbox = {"lamin": lat - 0.5, "lamax": lat + 0.5, "lomin": lon - 0.5, "lomax": lon + 0.5}
 
+    query = f'-latlong "{params_bbox["lamin"]} {params_bbox["lomin"]} {params_bbox["lamax"]} {params_bbox["lomax"]}"'
+    headers = {"x-apikey": AEROAPI_KEY, "Accept": "application/json; charset=UTF-8"}
+    params = {"query": query}
+
+    FT_TO_M = 0.3048
+    KTS_TO_MPS = 0.514444
+
+    aircraft = []
     try:
-        resp = requests.get("https://opensky-network.org/api/states/all", params=params, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        aircraft = []
+        next_url, next_params = AEROAPI_URL, params
+        while True:
+            resp = requests.get(next_url, headers=headers, params=next_params, timeout=15)
+            resp.raise_for_status()
+            data = resp.json() or {}
 
-        for ac in data.get("states", []) or []:
-            ac_lat, ac_lon = ac[6], ac[5]
-            if ac_lat is None or ac_lon is None:
-                continue
+            for f in (data.get("flights") or []):
+                lp = f.get("last_position") or {}
+                ac_lat = lp.get("latitude")
+                ac_lon = lp.get("longitude")
+                if ac_lat is None or ac_lon is None:
+                    continue
 
-            # prefer baro (7), fallback geo (13)
-            alt = (ac[7] if len(ac) > 7 and ac[7] is not None
-                   else (ac[13] if len(ac) > 13 and ac[13] is not None else 0.0))
-            if alt is None or alt< 0:
-                alt = 0.0
+                alt_hund_ft = lp.get("altitude") or 0
+                alt_m = max(0.0, float(alt_hund_ft) * 100.0 * FT_TO_M)
 
-            # 30-mi horizontal filter
-            dist_h = ground_distance(lat, lon, ac_lat, ac_lon)
-            if dist_h > MAX_RADIUS_METERS:
-                continue
+                vel_mps = float(lp.get("groundspeed") or 0.0) * KTS_TO_MPS
 
-            p = {
-                "ICAO24": ac[0],
-                "Callsign": ac[1].strip() if ac[1] else "N/A",
-                "Origin Country": ac[2],
-                "Last Contact": datetime.fromtimestamp(ac[4]).isoformat() if ac[4] else None,
-                "Longitude": ac_lon,
-                "Latitude": ac_lat,
-                "Altitude": round(float(alt)),
-                "DistanceFromAirport": round(dist_h),
-                #"OnGround": ac[8],                 # kept for debugging
-                "Velocity": float(ac[9] or 0.0),   # m/s
-                "Heading": ac[10],
-                "VerticalRate": float(ac[11] or 0.0),  # m/s
-                "AlertLevel": "NONE",
-                "Conflicts": []
-            }
-            
-            p["Status"] = "In Air" if is_airborne(p) else "On Ground"
-            aircraft.append(p)
+                dist_h = ground_distance(lat, lon, ac_lat, ac_lon)
+                if dist_h > MAX_RADIUS_METERS:
+                    continue
+
+                ts = lp.get("timestamp")
+                last_contact = ts if isinstance(ts, str) else datetime.utcnow().isoformat()
+
+                p = {
+                    "ICAO24": f.get("aircraft") or f.get("fa_flight_id") or "N/A",
+                    "Callsign": (f.get("ident") or "N/A").strip(),
+                    "Origin Country": None,
+                    "Last Contact": last_contact,
+                    "Longitude": ac_lon,
+                    "Latitude": ac_lat,
+                    "Altitude": round(alt_m),
+                    "DistanceFromAirport": round(dist_h),
+                    "Velocity": vel_mps,
+                    "Heading": lp.get("heading"),
+                    "VerticalRate": 0.0,
+                    "AlertLevel": "NONE",
+                    "Conflicts": []
+                }
+                p["Status"] = "In Air" if is_airborne(p) else "On Ground"
+                aircraft.append(p)
+
+            # Paging
+            links = data.get("links") or {}
+            next_link = (links.get("next") or {}).get("href")
+            if not next_link:
+                break
+            next_url, next_params = next_link, None
 
         return aircraft
 
     except requests.RequestException as e:
-        print(f"[ERROR] Fetch failed: {e}")
+        print(f"[ERROR] AeroAPI fetch failed: {e}")
         return []
 
 def check_proximity_alerts(planes):
     def sev(lvl): return {"NONE": 0, "WARNING": 1, "ALERT": 2, "ALARM": 3}[lvl]
 
-    # ensure tooltips stay in sync
     for p in planes:
         p["Status"] = "In Air" if is_airborne(p) else "On Ground"
 
@@ -129,7 +148,6 @@ def check_proximity_alerts(planes):
             d = haversine(p1["Latitude"], p1["Longitude"], p1["Altitude"],
                           p2["Latitude"], p2["Longitude"], p2["Altitude"])
 
-            # category (altitude-only ground logic)
             g1, g2 = is_ground(p1), is_ground(p2)
             if g1 and g2:
                 cat = "Ground-Ground"
@@ -148,9 +166,10 @@ def check_proximity_alerts(planes):
             else:
                 continue
 
-            for p in (p1, p2):
-                if sev(alert) > sev(p["AlertLevel"]):
-                    p["AlertLevel"] = alert
+            if sev(alert) > sev(p1["AlertLevel"]):
+                p1["AlertLevel"] = alert
+            if sev(alert) > sev(p2["AlertLevel"]):
+                p2["AlertLevel"] = alert
 
             p1["Conflicts"].append({"Callsign": p2["Callsign"], "Distance": round(d), "Alert": alert, "Category": cat})
             p2["Conflicts"].append({"Callsign": p1["Callsign"], "Distance": round(d), "Alert": alert, "Category": cat})
