@@ -12,7 +12,7 @@ app.secret_key = "anicca-demo-key"  # For session handling
 # -------------------------------------------------------
 # Caching / rate limiting: refresh at most once per hour
 # -------------------------------------------------------
-REFRESH_INTERVAL = int(os.getenv("REFRESH_INTERVAL", "3600"))  # seconds
+REFRESH_INTERVAL = int(os.getenv("REFRESH_INTERVAL", "60"))  # seconds
 _cache = {}               # { "SEA": {"ts": float, "planes": [...] } }
 _cache_lock = threading.Lock()
 
@@ -58,7 +58,7 @@ def get_planes():
     if "user" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    airport_code = request.args.get("airport", "SEA").upper()
+    airport_code = request.args.get("airport", "DXB").upper()
     # optional: ?force=1 to bypass cache (handy for testing)
     force_refresh = request.args.get("force", "0").lower() in ("1", "true", "yes")
 

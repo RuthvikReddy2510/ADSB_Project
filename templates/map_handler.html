@@ -2,7 +2,7 @@
 
 <script>
   const airportCoords = {{ airport_coords | tojson }};
-  const map = L.map('map').setView([47.4502, -122.3088], 10); // Default to SEA
+  const map = L.map('map').setView([25.2532, 55.3657], 10); // Default to DXB
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
