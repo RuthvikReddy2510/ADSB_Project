@@ -52,7 +52,7 @@ def home():
         airport_coords=airport_coords
     )
 
-# ---------------- API -------------------------
+# ---------------- API -----------------------
 @app.route("/api/planes")
 def get_planes():
     if "user" not in session:
