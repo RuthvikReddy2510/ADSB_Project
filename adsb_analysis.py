@@ -150,11 +150,11 @@ def check_proximity_alerts(planes):
 
             g1, g2 = is_ground(p1), is_ground(p2)
             if g1 and g2:
-                cat = "Ground-Ground"
+                cat = "Ground - Ground"
             elif not g1 and not g2:
-                cat = "Air-Air"
+                cat = "Air - Air"
             else:
-                cat = "Air-Ground"
+                cat = "Air - Ground"
 
             thr = THRESHOLDS[cat]
             if d <= thr["high"]:
